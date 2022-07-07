@@ -1,0 +1,58 @@
+### Ewolucja message trackingu. 
+
+
+
+
+Get-ExchangeServer | where {$_.serverrole-like "*hub*"} |
+or
+Get-ExchangeServer *hub* |
+or
+get-transportserver
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------------
+
+MAILE OD UŻYTKOWNIKA NIE DOCHODZĄ DO INNEJ DOMENY
+
+
+Get-ExchangeServer | where {$_.serverrole-like "*hub*"}  |Get-MessageTrackingLog -start 6/25/2013 -/2013 Export-Csv tcf-me.com
+
+Get-ExchangeServer | where {$_.serverrole-like "*hub*"}  |Get-MessageTrackingLog -start 6/1/2013 -Sender kristel.teyras@gemalto.com -ResultSize unlimited |  Where-Object {$_.recipients -match "@tcf-me.com"} |  select timestamp, source, eventid, clientip, serverIP,  sender, @{l="Recipients";e={$_.Recipients -join " "}}  , messagesubject, messageid, recipientstatus |Sort-Object -Property Timestamp | Export-Csv tracking.txt
+
+
+--------------------------------------------------------------------------------------------
+
+Maile od klientów nie docierają
+
+
+Get-ExchangeServer | where {$_.serverrole -like "*hub*"} | Get-MessageTrackingLog -EventID “RECEIVE” -Start “25/9/2014 1:00:00 AM”  -resultsize unlimited  | Where-Object {$_.sender -match “@unilever.com”} |select timestamp, source, eventid, clientip, serverIP,  sender, @{l="Recipients";e={$_.Recipients -join " "}} , messagesubject, messageid, recipientstatus |Sort-Object -Property Timestamp}
+Eksport do pliku:
+Get-ExchangeServer | where {$_.serverrole -like "*hub*"} | Get-MessageTrackingLog  -Start 14/7/2014  -resultsize unlimited   | Export-Csv karce_com
+
+
+
+---------------------------------------------
+
+Maile z "zaufanego hosta" nie docierają
+
+Get-ExchangeServer | where {$_.serverrole -like "*hub*"} | Get-MessageTrackingLog -resultsize unlimited  -start "1/10/2013 0:01AM" | where {$_.ClientIp -like "10.42.179.234" -and   $_.recipients -like "*@atos.net"} | ft timestamp,clientip,Recipients, Sender,messagesubject
+
+---------------------------
+
+Zaawansowany tracking log (dwa warunki)
+
+Get-ExchangeServer *hub* |Get-MessageTrackingLog -Start 10/1/2013 -ResultSize unlimited |Where-Object {$_.recipientstatus -match "553 5.1.8" -and $_.sender -match "AUBFXI02"} 
+
+
+-----------------------------------------
+
+Szybsze rozwijanie listy recipients:
+
+
+Get-TransportServer | Get-MessageTrackingLog  -Start 10/7/2014 -Sender ailing.cogat@gemalto.com | Select {$_.Recipients}, {$_.RecipientStatus}, * | Export-Csv report.csv -NoType
+
+Później można użyć skryptu "send_file_as_attachment" i wysłać report.csv na swoją skrzynkę.
+
+
+
+| Select Sender,{$_.Recipients},{$_.RecipientStatus},MessageSubject,TimeStamp, EventId, Source, SourceContext,MessageId,InternalMessageId,ClientIP,ClientHostName,ServerIP,ServerHostName,ConnectorId,TotalBytes,RecipientCount,RelatedRecipientAddress,Reference,ReturnPath,MessageInfo | export-CSV logs.csv -delimiter ";" -encoding UTF8 -NoTypeInformation
