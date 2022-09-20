@@ -1,8 +1,5 @@
 ### Ewolucja message trackingu. 
 
-
-
-
 Get-ExchangeServer | where {$_.serverrole-like "*hub*"} |
 or
 Get-ExchangeServer *hub* |
@@ -53,6 +50,13 @@ Get-TransportServer | Get-MessageTrackingLog  -Start 10/7/2014 -Sender ailing.co
 
 Później można użyć skryptu "send_file_as_attachment" i wysłać report.csv na swoją skrzynkę.
 
+------------------------
 
 
-| Select Sender,{$_.Recipients},{$_.RecipientStatus},MessageSubject,TimeStamp, EventId, Source, SourceContext,MessageId,InternalMessageId,ClientIP,ClientHostName,ServerIP,ServerHostName,ConnectorId,TotalBytes,RecipientCount,RelatedRecipientAddress,Reference,ReturnPath,MessageInfo | export-CSV logs.csv -delimiter ";" -encoding UTF8 -NoTypeInformation
+
+## GET MESSAGE TRACKING LOG
+Get-TransportService | invoke-command {Get-MessageTrackingLog -Start "7/13/2016 11:00" -End "7/13/2016 20:00" -MesageSubject "Letter"}
+
+
+## MESSAGE TRACKING LOG FORMATING
+$a | Select Sender,{$_.Recipients},{$_.RecipientStatus},MessageSubject,TimeStamp, EventId, Source, sourceContext, MessageId, InternalMessageId,ClientIP, ClientHostName,ServerIP,ServerHostName,ConnectorId,TotalBytes,RecipientCount,RelatedRecipientAddress,Reference,ReturnPath,MessageInfo | export-CSV .\tracking.csv -delimiter ";" -encoding UTF8 -NoTypeInformation
