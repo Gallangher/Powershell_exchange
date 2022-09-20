@@ -1,0 +1,60 @@
+
+#Conecting to Lync
+Write-host
+write-host "At the beginning we should create one Lync session to remote Lync server..."
+write-host "be patient and wait several seconds :)"
+	
+$lyncsession = New-PSSession -ConnectionUri https://abslyfvwp01.gemalto.com/ocspowershell -Authentication NegotiateWithImplicitCredential
+Import-PSSession -Session $lyncsession
+
+
+Import-Csv .\proxyaddresses.csv |% {
+
+$user = $_.alias
+$Identity = 'gemalto\'+$user
+
+
+$type = (Get-aduser $user -properties emailaddress).EmailAddress
+
+if ($type) {
+ 
+#address is set ....
+
+write-host "For user" $user  "address already exists"
+get-aduser   $user -properties Displayname, emailaddress, targetaddress,proxyaddresses |Select-Object Displayname,name,emailaddress,proxyaddresses,targetaddress |fl
+write-host "Primary SMTP address :" (Get-ADUser $user -Properties proxyaddresses |select -expandProperty proxyaddresses |where {$_ -clike "SMTP:*"})
+
+
+
+#Enabling Lync account
+#set SIP address (the same like WindowsEmailAddress)
+$sipaddress = 'sip:'+(Get-aduser $user -properties emailaddress).EmailAddress
+# write-host "SIP address will be: " $sipaddress
+
+if ((get-aduser $user).disntinguishedname -like "*OU=RnD*") {
+    Enable-CSuser -Identity $Identity -registrarpool 'lyncpool.gemalto.com' -sipaddress $sipaddress -DomainController ABSDOMVWP04.gemalto.com 
+    Grant-CSConferencingPolicy -Identity $Identity -policyname "Conferencing_rd" -DomainController ABSDOMVWP04.gemalto.com
+} else {
+   
+   Enable-CSuser -Identity $Identity -registrarpool 'lyncpool.gemalto.com' -sipaddress $sipaddress -DomainController ABSDOMVWP04.gemalto.com
+}
+write-host -foregroundcolor Green "SIP address is..."
+
+Get-CSUser $identity -DomainController ABSDOMVWP04.gemalto.com | Select Name, SIPAddress 
+
+$user = $null
+
+} Else {
+
+#There is no WindowsEmailAddress, so plese set ...
+write-host "For user" $user "there is no Windows Email address ... plese run our script and set WindowsEmailAddress and TargetAddress !!"
+
+
+}
+}
+
+
+write-host "Close Lync session..."
+write-host "bye"
+Remove-PsSession $lyncsession
+
